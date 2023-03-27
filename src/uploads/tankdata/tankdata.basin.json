@@ -1,0 +1,54 @@
+{
+  "basin_def": {
+    "BAHADURABAD": {
+      "type": "Subbasin",
+      "upstream": [],
+      "parameters": {
+        "t0_is": 0.01,
+        "t0_boc": 0.41716027366574754,
+        "t0_soc_uo": 0.2727446613840591,
+        "t0_soc_lo": 0.1,
+        "t0_soh_uo": 99.80227670602362,
+        "t0_soh_lo": 49.99957715144549,
+        "t1_is": 99.8921333550361,
+        "t1_boc": 0.5,
+        "t1_soc": 0.5,
+        "t1_soh": 100.0,
+        "t2_is": 100.0,
+        "t2_boc": 0.3259672261841261,
+        "t2_soc": 0.3389013767551911,
+        "t2_soh": 0.0,
+        "t3_is": 1.1995237228463256,
+        "t3_soc": 0.5
+      },
+      "area": 32
+    },
+    "Reach": {
+      "type": "Reach",
+      "upstream": [
+        "BAHADURABAD"
+      ],
+      "parameters": {
+        "k": 2.0,
+        "x": 0.3
+      }
+    },
+    "Junction": {
+      "type": "Junction",
+      "upstream": [
+        "Reach"
+      ],
+      "parameters": {}
+    },
+    "Sink": {
+      "type": "Sink",
+      "upstream": [
+        "Junction"
+      ],
+      "parameters": {}
+    }
+  },
+  "root_node": [
+    "BAHADURABAD"
+  ]
+}

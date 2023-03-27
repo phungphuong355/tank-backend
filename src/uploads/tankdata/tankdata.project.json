@@ -1,0 +1,9 @@
+{
+  "interval": 24.0,
+  "basin": "tankdata.basin.json",
+  "precipitation": "tankdata.pr.csv",
+  "evapotranspiration": "tankdata.et.csv",
+  "discharge": "tankdata.q.csv",
+  "result": "tankdata.result.csv",
+  "statistics": "tankdata.stats.json"
+}
