@@ -14,7 +14,7 @@ from config import UPLOADS
 
 def getRoutes(app: Flask):
     # Database
-    app.config["MONGO_URI"] = "mongodb://localhost:27017/duan"
+    app.config["MONGO_URI"] = "mongodb://mongo:27017/duan"
     mongo = PyMongo(app)
 
     # Hello world
