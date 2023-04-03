@@ -140,6 +140,8 @@ def create_csv_file(df: pd.DataFrame, filename: str) -> pd.DataFrame:
         ["Time", "BAHADURABAD"], \
         ["Time", "BAHADURABAD"]
 
+    result_csv.BAHADURABAD = [1]*len(result_csv.iloc[:,0])
+
     pr_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.pr.csv", index=False)
     et_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.et.csv", index=False)
     q_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.q.csv", index=False)
@@ -160,9 +162,8 @@ def read_stats_file(stats_file: str) -> dict:
         return stats
 
 
-def change_data_to_json_file(file: str) -> dict:
-    df = pd.read_csv(file)
+def change_data_to_json_file(file: pd.DataFrame) -> dict:
 
-    data = df.to_dict(orient='records')
+    data = file.to_dict(orient='records')
 
     return data

@@ -14,7 +14,7 @@ from config import UPLOADS
 
 def getRoutes(app: Flask):
     # Database
-    app.config["MONGO_URI"] = "mongodb://mongo:27017/duan"
+    app.config["MONGO_URI"] = "mongodb://localhost:27017/duan"
     mongo = PyMongo(app)
 
     # Hello world
@@ -129,11 +129,11 @@ def getRoutes(app: Flask):
                 return res
 
             # check filename in use
-            files = mongo.db.file.find_one({'file': file.filename.split('.')[0].replace(' ', '').lower()})
-            if files:
-                res = jsonify({'message': 'file is exist'})
-                res.status_code = 403
-                return res
+            # files = mongo.db.file.find_one({'file': file.filename.split('.')[0].replace(' ', '').lower()})
+            # if files:
+            #     res = jsonify({'message': 'file is exist'})
+            #     res.status_code = 403
+            #     return res
 
             # create system file tank-model follow filename
             ph.create_file_project(file.filename.split('.')[0])
@@ -142,9 +142,9 @@ def getRoutes(app: Flask):
             ph.create_stats_file(file.filename.split('.')[0])
 
             # insert filename into database
-            mongo.db.file.insert_one({
-                'file': file.filename.split('.')[0].replace(' ', '').lower()
-            })
+            # mongo.db.file.insert_one({
+            #     'file': file.filename.split('.')[0].replace(' ', '').lower()
+            # })
 
             res = jsonify({'message': 'ok'})
             res.status_code = 200
@@ -170,17 +170,14 @@ def getRoutes(app: Flask):
     @app.route('/api/v1/getModel/<string:filename>', methods=['GET'])
     def getModel(filename):
         try:
-            files = mongo.db.file.find_one({'file': filename})
-            if not files:
-                res = jsonify({'message': 'file is not exist'})
-                res.status_code = 404
-                return res
+            # files = mongo.db.file.find_one({'file': filename})
+            # if not files:
+            #     res = jsonify({'message': 'file is not exist'})
+            #     res.status_code = 404
+            #     return res
 
-            files = mongo.db.file.find_one({'file': filename})
-            if not files:
-                res = jsonify({'message': 'file is not exist'})
-                res.status_code = 404
-                return res
+            begin = request.args['begin']
+            end = request.args['end']
 
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
@@ -192,9 +189,23 @@ def getRoutes(app: Flask):
             basin = ioh.read_basin_file(basin_file)
             stats = ph.read_stats_file(stats_file)
 
-            precipitation = ph.change_data_to_json_file(precipitation_file)
-            discharge_td = ph.change_data_to_json_file(discharge_file)
-            discharge_tt = ph.change_data_to_json_file(result_file)
+            _precipitation, delt_pr = ioh.read_ts_file(precipitation_file)
+            _discharge, _ = ioh.read_ts_file(discharge_file, check_time_diff=False)
+            _result, _ = ioh.read_ts_file(result_file)
+
+            if begin and end:
+                for i in range(len(_precipitation.BAHADURABAD)):
+                    if str(_precipitation.BAHADURABAD.index[i]).split(' ')[0] == begin:
+                        begin = i
+                    if str(_precipitation.BAHADURABAD.index[i]).split(' ')[0] == end:
+                        end = i
+
+                _precipitation = _precipitation.iloc[begin:end+1]
+                _discharge = _discharge.iloc[begin:end+1]
+
+            precipitation = ph.change_data_to_json_file(_precipitation)
+            discharge_td = ph.change_data_to_json_file(_discharge)
+            discharge_tt = ph.change_data_to_json_file(_result)
 
             res = jsonify({'message': 'ok', 'basin': basin, 'stats': stats, 'precipitation': precipitation,
                            'discharge_td': discharge_td, 'discharge_tt': discharge_tt})
@@ -208,11 +219,15 @@ def getRoutes(app: Flask):
     @app.route('/api/v1/optimize/<string:filename>', methods=['PATCH'])
     def optimizedModel(filename):
         try:
-            files = mongo.db.file.find_one({'file': filename})
-            if not files:
-                res = jsonify({'message': 'file is not exist'})
-                res.status_code = 404
-                return res
+            # files = mongo.db.file.find_one({'file': filename})
+            # if not files:
+            #     res = jsonify({'message': 'file is not exist'})
+            #     res.status_code = 404
+            #     return res
+
+            area = json.loads(request.data)['area']
+            begin = json.loads(request.data)['begin']
+            end = json.loads(request.data)['end']
 
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
 
@@ -230,6 +245,19 @@ def getRoutes(app: Flask):
 
             basin = ioh.read_basin_file(basin_file)
 
+            basin['basin_def']['BAHADURABAD']['area'] = area
+
+            if begin and end:
+                for i in range(len(precipitation.BAHADURABAD)):
+                    if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == begin:
+                        begin = i
+                    if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == end:
+                        end = i
+
+                precipitation = precipitation.iloc[begin:end+1]
+                evapotranspiration = evapotranspiration.iloc[begin:end+1]
+                discharge = discharge.iloc[begin:end+1]
+
             optimized_basin = ch.optimize_project(basin, precipitation, evapotranspiration, discharge, del_t)
 
             with open(basin_file, 'w') as wf:
@@ -246,13 +274,15 @@ def getRoutes(app: Flask):
     @app.route('/api/v1/compute/<string:filename>', methods=['PATCH'])
     def computeModel(filename):
         try:
-            files = mongo.db.file.find_one({'file': filename})
-            if not files:
-                res = jsonify({'message': 'file is not exist'})
-                res.status_code = 404
-                return res
+            # files = mongo.db.file.find_one({'file': filename})
+            # if not files:
+            #     res = jsonify({'message': 'file is not exist'})
+            #     res.status_code = 404
+            #     return res
 
             area = json.loads(request.data)['area']
+            begin = json.loads(request.data)['begin']
+            end = json.loads(request.data)['end']
 
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
 
@@ -275,6 +305,17 @@ def getRoutes(app: Flask):
 
             del_t_proj = project['interval']
 
+            if begin and end:
+                for i in range(len(precipitation.BAHADURABAD)):
+                    if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == begin:
+                        begin = i
+                    if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == end:
+                        end = i
+
+                precipitation = precipitation.iloc[begin:end+1]
+                evapotranspiration = evapotranspiration.iloc[begin:end+1]
+                discharge = discharge.iloc[begin:end+1]
+            
             # check time difference consistancy
             del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
 
