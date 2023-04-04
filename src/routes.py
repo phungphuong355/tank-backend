@@ -175,6 +175,10 @@ def getRoutes(app: Flask):
                 res = jsonify({'message': 'file is not exist'})
                 res.status_code = 404
                 return res
+            
+            begin = request.args['begin']
+            end = request.args['end']
+            # print(begin, end)
 
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
@@ -185,10 +189,25 @@ def getRoutes(app: Flask):
 
             basin = ioh.read_basin_file(basin_file)
             stats = ph.read_stats_file(stats_file)
+            _precipitation = pd.read_csv(precipitation_file)
+            _discharge = pd.read_csv(discharge_file)
+            _result = pd.read_csv(result_file)
+            # print(_precipitation)
 
-            precipitation = ph.change_data_to_json_file(precipitation_file)
-            discharge_td = ph.change_data_to_json_file(discharge_file)
-            discharge_tt = ph.change_data_to_json_file(result_file)
+            if begin and end:
+                for i in range(len(_precipitation.Time)):
+                    if str(_precipitation.Time[i]).split(' ')[0] == begin:
+                        begin = i
+                    if str(_precipitation.Time[i]).split(' ')[0] == end:
+                        end = i
+
+                _precipitation = _precipitation.iloc[begin:end+1]
+                _discharge = _discharge.iloc[begin:end+1]
+                _result = _result.iloc[begin:end+1]
+
+            precipitation = ph.change_data_to_json_file(_precipitation)
+            discharge_td = ph.change_data_to_json_file(_discharge)
+            discharge_tt = ph.change_data_to_json_file(_result)
 
             res = jsonify({'message': 'ok', 'basin': basin, 'stats': stats, 'precipitation': precipitation,
                            'discharge_td': discharge_td, 'discharge_tt': discharge_tt})
