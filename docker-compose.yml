@@ -5,6 +5,7 @@ services:
     build:
       dockerfile: dockerfile
       context: .
+      network: host
     command: ["python3", "src/__init__.py"]
     restart: always
     ports:
