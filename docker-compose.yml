@@ -1,6 +1,7 @@
 services:
   app:
     container_name: tls_app
+    networks_mode: "host"
     build:
       dockerfile: dockerfile
       context: .
@@ -8,8 +9,6 @@ services:
     restart: always
     ports:
       - 5000:5000
-    networks:
-      - host
 
   mongo:
     image: mongo
@@ -18,7 +17,3 @@ services:
 
 volumes:
   mongo-data:
-
-networks:
-  host:
-    name: host
