@@ -129,11 +129,11 @@ def getRoutes(app: Flask):
                 return res
 
             # check filename in use
-            # files = mongo.db.file.find_one({'file': file.filename.split('.')[0].replace(' ', '').lower()})
-            # if files:
-            #     res = jsonify({'message': 'file is exist'})
-            #     res.status_code = 403
-            #     return res
+            files = mongo.db.file.find_one({'file': file.filename.split('.')[0].replace(' ', '').lower()})
+            if files:
+                res = jsonify({'message': 'file is exist'})
+                res.status_code = 403
+                return res
 
             # create system file tank-model follow filename
             ph.create_file_project(file.filename.split('.')[0])
@@ -142,9 +142,9 @@ def getRoutes(app: Flask):
             ph.create_stats_file(file.filename.split('.')[0])
 
             # insert filename into database
-            # mongo.db.file.insert_one({
-            #     'file': file.filename.split('.')[0].replace(' ', '').lower()
-            # })
+            mongo.db.file.insert_one({
+                'file': file.filename.split('.')[0].replace(' ', '').lower()
+            })
 
             res = jsonify({'message': 'ok'})
             res.status_code = 200
@@ -170,11 +170,11 @@ def getRoutes(app: Flask):
     @app.route('/api/v1/getModel/<string:filename>', methods=['GET'])
     def getModel(filename):
         try:
-            # files = mongo.db.file.find_one({'file': filename})
-            # if not files:
-            #     res = jsonify({'message': 'file is not exist'})
-            #     res.status_code = 404
-            #     return res
+            files = mongo.db.file.find_one({'file': filename})
+            if not files:
+                res = jsonify({'message': 'file is not exist'})
+                res.status_code = 404
+                return res
 
             begin = request.args['begin']
             end = request.args['end']
@@ -219,11 +219,11 @@ def getRoutes(app: Flask):
     @app.route('/api/v1/optimize/<string:filename>', methods=['PATCH'])
     def optimizedModel(filename):
         try:
-            # files = mongo.db.file.find_one({'file': filename})
-            # if not files:
-            #     res = jsonify({'message': 'file is not exist'})
-            #     res.status_code = 404
-            #     return res
+            files = mongo.db.file.find_one({'file': filename})
+            if not files:
+                res = jsonify({'message': 'file is not exist'})
+                res.status_code = 404
+                return res
 
             area = json.loads(request.data)['area']
             begin = json.loads(request.data)['begin']
@@ -274,11 +274,11 @@ def getRoutes(app: Flask):
     @app.route('/api/v1/compute/<string:filename>', methods=['PATCH'])
     def computeModel(filename):
         try:
-            # files = mongo.db.file.find_one({'file': filename})
-            # if not files:
-            #     res = jsonify({'message': 'file is not exist'})
-            #     res.status_code = 404
-            #     return res
+            files = mongo.db.file.find_one({'file': filename})
+            if not files:
+                res = jsonify({'message': 'file is not exist'})
+                res.status_code = 404
+                return res
 
             area = json.loads(request.data)['area']
             begin = json.loads(request.data)['begin']
