@@ -176,9 +176,13 @@ def getRoutes(app: Flask):
                 res.status_code = 404
                 return res
             
-            begin = request.args['begin']
-            end = request.args['end']
-            # print(begin, end)
+            begin = ''
+            end = ''
+
+            if request.args:
+                begin = request.args['begin']
+                end = request.args['end']
+            print(begin, end)
 
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
