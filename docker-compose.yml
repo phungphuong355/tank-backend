@@ -1,7 +1,6 @@
 services:
   app:
     container_name: tls_app
-    network_mode: host
     build:
       dockerfile: dockerfile
       context: .
@@ -13,7 +12,6 @@ services:
 
   mongo:
     image: mongo
-    network_mode: host
     volumes:
       - mongo-data:/data/db
 
