@@ -162,8 +162,9 @@ def read_stats_file(stats_file: str) -> dict:
         return stats
 
 
-def change_data_to_json_file(file: pd.DataFrame) -> dict:
+def change_data_to_json_file(file: str) -> dict:
+    df = pd.read_csv(file)
 
-    data = file.to_dict(orient='records')
+    data = df.to_dict(orient='records')
 
     return data
