@@ -1,7 +1,8 @@
 # Base image
 FROM python:3.10-slim
 
-RUN apt-get update && apt-get install -y libpq-dev build-essential
+# Install
+# RUN apt-get update && apt-get install -y libpq-dev build-essential
 
 # Set the working directory
 WORKDIR /app
