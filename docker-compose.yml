@@ -4,12 +4,13 @@ services:
     build:
       dockerfile: dockerfile
       context: .
-    network_mode: "host"
     command: ["python3", "src/__init__.py"]
     restart: always
     ports:
       - 5000:5000
-  
+    network:
+      - host
+
   mongo:
     image: mongo
     volumes:
