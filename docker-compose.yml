@@ -2,7 +2,7 @@ services:
   app:
     container_name: tls_app
     networks:
-      - host
+      - backend
     build:
       dockerfile: dockerfile
       context: .
@@ -18,3 +18,7 @@ services:
 
 volumes:
   mongo-data:
+
+networks:
+  backend:
+    name: backend
