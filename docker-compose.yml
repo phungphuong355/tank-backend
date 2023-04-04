@@ -9,8 +9,7 @@ services:
     restart: always
     ports:
       - 6000:6000
-    networks:
-      - host
+    network: host
 
   mongo:
     image: mongo
