@@ -16,8 +16,6 @@ services:
     image: mongo
     volumes:
       - mongo-data:/data/db
-    networks:
-      - host
 
 volumes:
   mongo-data:
