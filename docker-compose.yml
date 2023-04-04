@@ -1,8 +1,10 @@
 services:
   app:
     container_name: tls_app
+    networks:
+      - host
     build:
-      dockerfile: --net=host dockerfile
+      dockerfile: dockerfile
       context: .
     command: ["python3", "src/__init__.py"]
     restart: always
