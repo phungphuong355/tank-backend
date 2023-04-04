@@ -1,7 +1,6 @@
 services:
   app:
     container_name: tls_app
-    network_mode: "host"
     build:
       dockerfile: dockerfile
       context: .
@@ -9,7 +8,7 @@ services:
     command: ["python3", "src/__init__.py"]
     restart: always
     ports:
-      - 6000:6000
+      - 5000:5000
 
   mongo:
     image: mongo
