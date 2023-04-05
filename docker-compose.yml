@@ -10,9 +10,9 @@ services:
     ports:
       - 6000:6000
     volumes:
-      type: bind
-      source: ./src/uploads
-      target: /app/src/uploads
+      - type: bind
+        source: ./src/uploads
+        target: /app/src/uploads
 
   mongo:
     image: mongo
