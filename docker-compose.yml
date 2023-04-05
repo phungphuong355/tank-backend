@@ -9,6 +9,10 @@ services:
     restart: always
     ports:
       - 6000:6000
+    volumes:
+      type: bind
+      source: ./src/uploads
+      target: /src/uploads
 
   mongo:
     image: mongo
