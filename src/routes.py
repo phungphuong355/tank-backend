@@ -14,7 +14,7 @@ from config import UPLOADS
 
 def getRoutes(app: Flask):
     # Database
-    app.config["MONGO_URI"] = "mongodb://mongo:27017/duan"
+    app.config["MONGO_URI"] = "mongodb://localhost:27017/duan"
     mongo = PyMongo(app)
 
     # Hello world
@@ -175,14 +175,11 @@ def getRoutes(app: Flask):
                 res = jsonify({'message': 'file is not exist'})
                 res.status_code = 404
                 return res
-            
-            begin = ''
-            end = ''
 
             if request.args:
                 begin = request.args['begin']
                 end = request.args['end']
-            print(begin, end)
+            # print(begin, end)
 
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
@@ -198,16 +195,17 @@ def getRoutes(app: Flask):
             _result = pd.read_csv(result_file)
             # print(_precipitation)
 
+            head, tail = 0, 0
             if begin and end:
                 for i in range(len(_precipitation.Time)):
                     if str(_precipitation.Time[i]).split(' ')[0] == begin:
-                        begin = i
+                        head = i
                     if str(_precipitation.Time[i]).split(' ')[0] == end:
-                        end = i
+                        tail = i
+                        break
 
-                _precipitation = _precipitation.iloc[begin:end+1]
-                _discharge = _discharge.iloc[begin:end+1]
-                _result = _result.iloc[begin:end+1]
+                _precipitation = _precipitation.iloc[head:tail+1]
+                _discharge = _discharge.iloc[head:tail+1]
 
             precipitation = ph.change_data_to_json_file(_precipitation)
             discharge_td = ph.change_data_to_json_file(_discharge)
@@ -215,61 +213,6 @@ def getRoutes(app: Flask):
 
             res = jsonify({'message': 'ok', 'basin': basin, 'stats': stats, 'precipitation': precipitation,
                            'discharge_td': discharge_td, 'discharge_tt': discharge_tt})
-            res.status_code = 200
-            return res
-        except Exception as error:
-            res = jsonify({'message': 'Bad request', 'content': str(error)})
-            res.status_code = 400
-            return res
-
-    @app.route('/api/v1/optimize/<string:filename>', methods=['PATCH'])
-    def optimizedModel(filename):
-        try:
-            files = mongo.db.file.find_one({'file': filename})
-            if not files:
-                res = jsonify({'message': 'file is not exist'})
-                res.status_code = 404
-                return res
-
-            area = json.loads(request.data)['area']
-            begin = json.loads(request.data)['begin']
-            end = json.loads(request.data)['end']
-
-            project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
-
-            basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
-            precipitation_file = f"{UPLOADS}/{filename}/{project['precipitation']}"
-            evapotranspiration_file = f"{UPLOADS}/{filename}/{project['evapotranspiration']}"
-            discharge_file = f"{UPLOADS}/{filename}/{project['discharge']}"
-            delt_proj = project['interval']
-
-            precipitation, delt_pr = ioh.read_ts_file(precipitation_file)
-            evapotranspiration, delt_et = ioh.read_ts_file(evapotranspiration_file)
-            discharge, _ = ioh.read_ts_file(discharge_file, check_time_diff=False)
-
-            del_t = utils.check_time_delta(delt_pr, delt_et, delt_proj)
-
-            basin = ioh.read_basin_file(basin_file)
-
-            basin['basin_def']['BAHADURABAD']['area'] = area
-
-            if begin and end:
-                for i in range(len(precipitation.BAHADURABAD)):
-                    if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == begin:
-                        begin = i
-                    if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == end:
-                        end = i
-
-                precipitation = precipitation.iloc[begin:end+1]
-                evapotranspiration = evapotranspiration.iloc[begin:end+1]
-                discharge = discharge.iloc[begin:end+1]
-
-            optimized_basin = ch.optimize_project(basin, precipitation, evapotranspiration, discharge, del_t)
-
-            with open(basin_file, 'w') as wf:
-                json.dump(optimized_basin, wf, indent=2)
-
-            res = jsonify({'message': 'ok'})
             res.status_code = 200
             return res
         except Exception as error:
@@ -285,10 +228,11 @@ def getRoutes(app: Flask):
                 res = jsonify({'message': 'file is not exist'})
                 res.status_code = 404
                 return res
-
-            area = json.loads(request.data)['area']
-            begin = json.loads(request.data)['begin']
-            end = json.loads(request.data)['end']
+            
+            if request.data:
+                area = json.loads(request.data)['area']
+                begin = json.loads(request.data)['begin']
+                end = json.loads(request.data)['end']
 
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
 
@@ -311,22 +255,34 @@ def getRoutes(app: Flask):
 
             del_t_proj = project['interval']
 
+            head, tail = 0, 0
             if begin and end:
                 for i in range(len(precipitation.BAHADURABAD)):
                     if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == begin:
-                        begin = i
+                        head = i
                     if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == end:
-                        end = i
+                        tail = i
+                        break
 
-                precipitation = precipitation.iloc[begin:end+1]
-                evapotranspiration = evapotranspiration.iloc[begin:end+1]
-                discharge = discharge.iloc[begin:end+1]
+                precipitation = precipitation.iloc[head:tail+1]
+                evapotranspiration = evapotranspiration.iloc[head:tail+1]
+                discharge = discharge.iloc[head:tail+1]
             
             # check time difference consistancy
             del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
 
             computation_result = ch.compute_project(basin, precipitation, evapotranspiration, del_t)
             statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
+
+            if statistics['BAHADURABAD']['NSE'] < 0.7:
+                optimized_basin = ch.optimize_project(basin, precipitation, evapotranspiration, discharge, del_t)
+                
+                with open(basin_file, 'w') as wf:
+                    json.dump(optimized_basin, wf, indent=2)
+
+                computation_result = ch.compute_project(basin, precipitation, evapotranspiration, del_t)
+                statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
+
 
             ioh.write_ts_file(computation_result, result_file)
 
