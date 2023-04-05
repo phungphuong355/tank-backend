@@ -51,7 +51,7 @@ def getRoutes(app: Flask):
                 'password': hash_password
             })
 
-            res = jsonify({'message': 'User added successfully', 'user': createdUser})
+            res = jsonify({'message': 'User added successfully'})
             res.status_code = 201
             return res
         except Exception as error:
