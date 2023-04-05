@@ -14,7 +14,7 @@ from config import UPLOADS
 
 def getRoutes(app: Flask):
     # Database
-    app.config["MONGO_URI"] = "mongodb://mongo:27017/duan"
+    app.config["MONGO_URI"] = "mongodb://localhost:27017/duan"
     mongo = PyMongo(app)
 
     # Hello world
@@ -176,11 +176,6 @@ def getRoutes(app: Flask):
                 res.status_code = 404
                 return res
 
-            if request.args:
-                begin = request.args['begin']
-                end = request.args['end']
-            # print(begin, end)
-
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
             stats_file = f"{UPLOADS}/{filename}/{project['statistics']}"
@@ -193,10 +188,21 @@ def getRoutes(app: Flask):
             _precipitation = pd.read_csv(precipitation_file)
             _discharge = pd.read_csv(discharge_file)
             _result = pd.read_csv(result_file)
-            # print(_precipitation)
+            
+            # begin
+            if 'begin' not in request.args:
+                begin = str(_precipitation.Time[0]).split(' ')[0]
+            else:
+                begin = request.args['begin']
+
+            # end
+            if 'end' not in request.args:
+                end = str(_precipitation.Time[len(_precipitation.Time)-1]).split(' ')[0]
+            else:
+                end = request.args['end']
 
             head, tail = 0, 0
-            if begin and end:
+            if 'begin' in request.args or 'end' in request.args:
                 for i in range(len(_precipitation.Time)):
                     if str(_precipitation.Time[i]).split(' ')[0] == begin:
                         head = i
@@ -229,10 +235,10 @@ def getRoutes(app: Flask):
                 res.status_code = 404
                 return res
             
-            if request.data:
-                area = json.loads(request.data)['area']
-                begin = json.loads(request.data)['begin']
-                end = json.loads(request.data)['end']
+            if 'area' not in json.loads(request.data):
+                raise Exception("area is required")
+            
+            area = json.loads(request.data)['area']
 
             project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
 
@@ -255,8 +261,20 @@ def getRoutes(app: Flask):
 
             del_t_proj = project['interval']
 
+            # begin
+            if 'begin' not in json.loads(request.data):
+                begin = str(precipitation.BAHADURABAD.index[0]).split(' ')[0]
+            else:
+                begin = json.loads(request.data)['begin']
+
+            # end
+            if 'end' not in json.loads(request.data):
+                end = str(precipitation.BAHADURABAD.index[-1]).split(' ')[0]
+            else:   
+                end = json.loads(request.data)['end']
+
             head, tail = 0, 0
-            if begin and end:
+            if 'begin' in json.loads(request.data) or 'end' in json.loads(request.data):
                 for i in range(len(precipitation.BAHADURABAD)):
                     if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == begin:
                         head = i
