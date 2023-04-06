@@ -188,7 +188,8 @@ def getRoutes(app: Flask):
             _precipitation = pd.read_csv(precipitation_file)
             _discharge = pd.read_csv(discharge_file)
             _result = pd.read_csv(result_file)
-            
+            timeline = pd.read_csv(precipitation_file)['Time']
+
             # begin
             if 'begin' not in request.args:
                 begin = str(_precipitation.Time[0]).split(' ')[0]
@@ -217,7 +218,7 @@ def getRoutes(app: Flask):
             discharge_td = ph.change_data_to_json_file(_discharge)
             discharge_tt = ph.change_data_to_json_file(_result)
 
-            res = jsonify({'message': 'ok', 'basin': basin, 'stats': stats, 'precipitation': precipitation,
+            res = jsonify({'message': 'ok', 'timeline': list(timeline), 'basin': basin, 'stats': stats, 'precipitation': precipitation,
                            'discharge_td': discharge_td, 'discharge_tt': discharge_tt})
             res.status_code = 200
             return res
@@ -226,8 +227,8 @@ def getRoutes(app: Flask):
             res.status_code = 400
             return res
 
-    @app.route('/api/v1/compute/<string:filename>', methods=['PATCH'])
-    def computeModel(filename):
+    @app.route('/api/v1/optimize/<string:filename>', methods=['PATCH'])
+    def optimizeModel(filename):
         try:
             files = mongo.db.file.find_one({'file': filename})
             if not files:
@@ -301,6 +302,96 @@ def getRoutes(app: Flask):
                 computation_result = ch.compute_project(basin, precipitation, evapotranspiration, del_t)
                 statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
 
+
+            ioh.write_ts_file(computation_result, result_file)
+
+            print(
+                tabulate(
+                    [
+                        ('NSE', statistics['BAHADURABAD']['NSE']),
+                        ('RMSE', statistics['BAHADURABAD']['RMSE']),
+                        ('R2', statistics['BAHADURABAD']['R2']),
+                        ('PBIAS', statistics['BAHADURABAD']['PBIAS']),
+                    ],
+                    headers=['Statistics', 'BAHADURABAD'], tablefmt='psql'
+                )
+            )
+
+            with open(statistics_file, 'w') as stat_file_write_buffer:
+                json.dump(statistics, stat_file_write_buffer, indent=2)
+
+            res = jsonify({'message': 'ok', 'result': list(computation_result['BAHADURABAD'])})
+            res.status_code = 200
+            return res
+        except Exception as error:
+            res = jsonify({'message': 'Bad request', 'content': str(error)})
+            res.status_code = 400
+            return res
+
+    @app.route('/api/v1/compute/<string:filename>', methods=['PATCH'])
+    def computeModel(filename):
+        try:
+            if 'area' not in json.loads(request.data):
+                raise Exception("area is required")
+            
+            if 'parameters' not in json.loads(request.data):
+                raise Exception("parameters is required")
+
+            area = json.loads(request.data)['area']
+            parameter = json.loads(request.data)['parameters']
+
+            project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
+
+            basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
+            precipitation_file = f"{UPLOADS}/{filename}/{project['precipitation']}"
+            evapotranspiration_file = f"{UPLOADS}/{filename}/{project['evapotranspiration']}"
+            discharge_file = f"{UPLOADS}/{filename}/{project['discharge']}"
+            statistics_file = f"{UPLOADS}/{filename}/{project['statistics']}"
+            result_file = f"{UPLOADS}/{filename}/{project['result']}"
+
+            basin = ioh.read_basin_file(basin_file)
+            precipitation, dt_pr = ioh.read_ts_file(precipitation_file)
+            evapotranspiration, dt_et = ioh.read_ts_file(evapotranspiration_file)
+            discharge, _ = ioh.read_ts_file(discharge_file, check_time_diff=False)
+
+            basin['basin_def']['BAHADURABAD']['area'] = area
+            basin['basin_def']['BAHADURABAD']['parameters'] = parameter
+            
+            with open(basin_file, 'w') as basin_file_write_buffer:
+                json.dump(basin, basin_file_write_buffer, indent=2)
+
+            del_t_proj = project['interval']
+
+            # begin
+            if 'begin' not in json.loads(request.data):
+                begin = str(precipitation.BAHADURABAD.index[0]).split(' ')[0]
+            else:
+                begin = json.loads(request.data)['begin']
+
+            # end
+            if 'end' not in json.loads(request.data):
+                end = str(precipitation.BAHADURABAD.index[-1]).split(' ')[0]
+            else:   
+                end = json.loads(request.data)['end']
+
+            head, tail = 0, 0
+            if 'begin' in json.loads(request.data) or 'end' in json.loads(request.data):
+                for i in range(len(precipitation.BAHADURABAD)):
+                    if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == begin:
+                        head = i
+                    if str(precipitation.BAHADURABAD.index[i]).split(' ')[0] == end:
+                        tail = i
+                        break
+
+                precipitation = precipitation.iloc[head:tail+1]
+                evapotranspiration = evapotranspiration.iloc[head:tail+1]
+                discharge = discharge.iloc[head:tail+1]
+
+            # check time difference consistancy
+            del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
+
+            computation_result = ch.compute_project(basin, precipitation, evapotranspiration, del_t)
+            statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
 
             ioh.write_ts_file(computation_result, result_file)
 
