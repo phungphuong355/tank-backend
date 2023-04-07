@@ -293,6 +293,8 @@ def getRoutes(app: Flask):
             computation_result = ch.compute_project(basin, precipitation, evapotranspiration, del_t)
             statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
 
+            statistics['BAHADURABAD']['R2'] = 0
+
             if statistics['BAHADURABAD']['NSE'] < 0.7:
                 optimized_basin = ch.optimize_project(basin, precipitation, evapotranspiration, discharge, del_t)
                 
@@ -304,6 +306,8 @@ def getRoutes(app: Flask):
 
 
             ioh.write_ts_file(computation_result, result_file)
+
+            statistics['BAHADURABAD']['R2'] = 0
 
             print(
                 tabulate(
@@ -394,6 +398,8 @@ def getRoutes(app: Flask):
             statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
 
             ioh.write_ts_file(computation_result, result_file)
+
+            statistics['BAHADURABAD']['R2'] = 0
 
             print(
                 tabulate(
