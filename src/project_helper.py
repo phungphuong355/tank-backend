@@ -20,13 +20,17 @@ def create_file_project(filename: str) -> dict:
         interval=24.0,  # time interval in hour : float
         basin=f'{filename}.basin.json',  # basin path - json-file
         precipitation=f'{filename}.pr.csv',  # precipitation path - csv file
-        evapotranspiration=f'{filename}.et.csv',  # evapotranspiration path - csv file
+        # evapotranspiration path - csv file
+        evapotranspiration=f'{filename}.et.csv',
         discharge=f'{filename}.q.csv',  # observer discharge path - csv file
-        result=f'{filename}.result.csv',  # output file for discharge - csv file
-        statistics=f'{filename}.stats.json'  # statistics calculated form observed discharge - json-file
+        # output file for discharge - csv file
+        result=f'{filename}.result.csv',
+        # statistics calculated form observed discharge - json-file
+        statistics=f'{filename}.stats.json'
     )
 
-    project_file_path = os.path.join(f"{UPLOADS}/{filename}", f'{filename}.project.json')
+    project_file_path = os.path.join(
+        f"{UPLOADS}/{filename}", f'{filename}.project.json')
 
     with open(project_file_path, 'w') as project_file:
         f = project_file.write(json.dumps(project, indent=2))
@@ -92,7 +96,8 @@ def create_basin_file(filename: str) -> dict:
         ]
     )
 
-    basin_file_path = os.path.join(f"{UPLOADS}/{filename}", f'{filename}.basin.json')
+    basin_file_path = os.path.join(
+        f"{UPLOADS}/{filename}", f'{filename}.basin.json')
 
     with open(basin_file_path, 'w') as project_file:
         f = project_file.write(json.dumps(basin, indent=2))
@@ -112,7 +117,8 @@ def create_stats_file(filename: str) -> dict:
         }
     )
 
-    stats_file_path = os.path.join(f"{UPLOADS}/{filename}", f'{filename}.stats.json')
+    stats_file_path = os.path.join(
+        f"{UPLOADS}/{filename}", f'{filename}.stats.json')
 
     with open(stats_file_path, 'w') as project_file:
         f = project_file.write(json.dumps(stats, indent=2))
@@ -140,12 +146,13 @@ def create_csv_file(df: pd.DataFrame, filename: str) -> pd.DataFrame:
         ["Time", "BAHADURABAD"], \
         ["Time", "BAHADURABAD"]
 
-    result_csv.BAHADURABAD = [1]*len(result_csv.iloc[:,0])
+    result_csv.BAHADURABAD = [1]*len(result_csv.iloc[:, 0])
 
     pr_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.pr.csv", index=False)
     et_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.et.csv", index=False)
     q_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.q.csv", index=False)
-    result_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.result.csv", index=False)
+    result_csv.to_csv(
+        f"{UPLOADS}/{filename}/{filename}.result.csv", index=False)
 
     return df
 

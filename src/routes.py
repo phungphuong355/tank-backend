@@ -77,7 +77,8 @@ def getRoutes(app: Flask):
 
                 isMatch = check_password_hash(user['password'], password)
                 if isMatch is False:
-                    res = jsonify({'message': 'Email or password is not correct'})
+                    res = jsonify(
+                        {'message': 'Email or password is not correct'})
                     res.status_code = 400
                     return res
 
@@ -86,6 +87,33 @@ def getRoutes(app: Flask):
             return res
         except Exception as error:
 
+            res = jsonify({'message': 'Bad request', 'content': str(error)})
+            res.status_code = 400
+            return res
+
+    @app.route('/api/v1/changePass/<string:email>', methods=['PATCH'])
+    def changePassword(email: str):
+        try:
+            currentPass = json.loads(request.data)['currentPass']
+            newPass = json.loads(request.data)['newPass']
+
+            user = mongo.db.users.find_one({'email': email})
+            if not user:
+                raise Exception("user not found")
+
+            isMatch = check_password_hash(user['password'], currentPass)
+            if isMatch is False:
+                raise Exception('Password is not correct')
+
+            hashPass = generate_password_hash(newPass)
+
+            mongo.db.users.update_one(
+                {"email": email}, {"$set": {"password": hashPass}})
+
+            res = jsonify({'message': 'ok'})
+            res.status_code = 200
+            return res
+        except Exception as error:
             res = jsonify({'message': 'Bad request', 'content': str(error)})
             res.status_code = 400
             return res
@@ -109,27 +137,32 @@ def getRoutes(app: Flask):
             # validate file
             file = request.files['file_excel']
             if 'file_excel' not in request.files:
-                res = jsonify({'message': 'Bad request', 'content': 'No file part'})
+                res = jsonify({'message': 'Bad request',
+                              'content': 'No file part'})
                 res.status_code = 400
                 return res
             elif file.filename == '':
-                res = jsonify({'message': 'Bad request', 'content': 'No selected file'})
+                res = jsonify({'message': 'Bad request',
+                              'content': 'No selected file'})
                 res.status_code = 400
                 return res
             elif not ph.allowed_file(file.filename):
-                res = jsonify({'message': 'Bad request', 'content': 'File is not allowed'})
+                res = jsonify({'message': 'Bad request',
+                              'content': 'File is not allowed'})
                 res.status_code = 400
                 return res
 
             # verify file input from client
             df = pd.read_excel(file)
             if len(df.columns) > 4:
-                res = jsonify({'message': 'Bad request', 'content': 'File only contain 4 columns'})
+                res = jsonify({'message': 'Bad request',
+                              'content': 'File only contain 4 columns'})
                 res.status_code = 400
                 return res
 
             # check filename in use
-            files = mongo.db.file.find_one({'file': file.filename.split('.')[0].replace(' ', '').lower()})
+            files = mongo.db.file.find_one(
+                {'file': file.filename.split('.')[0].replace(' ', '').lower()})
             if files:
                 res = jsonify({'message': 'file is exist'})
                 res.status_code = 403
@@ -176,7 +209,8 @@ def getRoutes(app: Flask):
                 res.status_code = 404
                 return res
 
-            project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
+            project = ioh.read_project_file(
+                f"{UPLOADS}/{filename}/{filename}.project.json")
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
             stats_file = f"{UPLOADS}/{filename}/{project['statistics']}"
             discharge_file = f"{UPLOADS}/{filename}/{project['discharge']}"
@@ -198,7 +232,8 @@ def getRoutes(app: Flask):
 
             # end
             if 'end' not in request.args:
-                end = str(_precipitation.Time[len(_precipitation.Time)-1]).split(' ')[0]
+                end = str(_precipitation.Time[len(
+                    _precipitation.Time)-1]).split(' ')[0]
             else:
                 end = request.args['end']
 
@@ -235,13 +270,14 @@ def getRoutes(app: Flask):
                 res = jsonify({'message': 'file is not exist'})
                 res.status_code = 404
                 return res
-            
+
             if 'area' not in json.loads(request.data):
                 raise Exception("area is required")
-            
+
             area = json.loads(request.data)['area']
 
-            project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
+            project = ioh.read_project_file(
+                f"{UPLOADS}/{filename}/{filename}.project.json")
 
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
             precipitation_file = f"{UPLOADS}/{filename}/{project['precipitation']}"
@@ -252,8 +288,10 @@ def getRoutes(app: Flask):
 
             basin = ioh.read_basin_file(basin_file)
             precipitation, dt_pr = ioh.read_ts_file(precipitation_file)
-            evapotranspiration, dt_et = ioh.read_ts_file(evapotranspiration_file)
-            discharge, _ = ioh.read_ts_file(discharge_file, check_time_diff=False)
+            evapotranspiration, dt_et = ioh.read_ts_file(
+                evapotranspiration_file)
+            discharge, _ = ioh.read_ts_file(
+                discharge_file, check_time_diff=False)
 
             basin['basin_def']['BAHADURABAD']['area'] = area
 
@@ -271,7 +309,7 @@ def getRoutes(app: Flask):
             # end
             if 'end' not in json.loads(request.data):
                 end = str(precipitation.BAHADURABAD.index[-1]).split(' ')[0]
-            else:   
+            else:
                 end = json.loads(request.data)['end']
 
             head, tail = 0, 0
@@ -286,24 +324,28 @@ def getRoutes(app: Flask):
                 precipitation = precipitation.iloc[head:tail+1]
                 evapotranspiration = evapotranspiration.iloc[head:tail+1]
                 discharge = discharge.iloc[head:tail+1]
-            
+
             # check time difference consistancy
             del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
 
-            computation_result = ch.compute_project(basin, precipitation, evapotranspiration, del_t)
-            statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
+            computation_result = ch.compute_project(
+                basin, precipitation, evapotranspiration, del_t)
+            statistics = ch.compute_statistics(
+                basin=basin, result=computation_result, discharge=discharge)
 
             statistics['BAHADURABAD']['R2'] = 0
 
             if statistics['BAHADURABAD']['NSE'] < 0.7:
-                optimized_basin = ch.optimize_project(basin, precipitation, evapotranspiration, discharge, del_t)
-                
+                optimized_basin = ch.optimize_project(
+                    basin, precipitation, evapotranspiration, discharge, del_t)
+
                 with open(basin_file, 'w') as wf:
                     json.dump(optimized_basin, wf, indent=2)
 
-                computation_result = ch.compute_project(basin, precipitation, evapotranspiration, del_t)
-                statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
-
+                computation_result = ch.compute_project(
+                    basin, precipitation, evapotranspiration, del_t)
+                statistics = ch.compute_statistics(
+                    basin=basin, result=computation_result, discharge=discharge)
 
             ioh.write_ts_file(computation_result, result_file)
 
@@ -324,7 +366,8 @@ def getRoutes(app: Flask):
             with open(statistics_file, 'w') as stat_file_write_buffer:
                 json.dump(statistics, stat_file_write_buffer, indent=2)
 
-            res = jsonify({'message': 'ok', 'result': list(computation_result['BAHADURABAD'])})
+            res = jsonify({'message': 'ok', 'result': list(
+                computation_result['BAHADURABAD'])})
             res.status_code = 200
             return res
         except Exception as error:
@@ -337,14 +380,15 @@ def getRoutes(app: Flask):
         try:
             if 'area' not in json.loads(request.data):
                 raise Exception("area is required")
-            
+
             if 'parameters' not in json.loads(request.data):
                 raise Exception("parameters is required")
 
             area = json.loads(request.data)['area']
             parameter = json.loads(request.data)['parameters']
 
-            project = ioh.read_project_file(f"{UPLOADS}/{filename}/{filename}.project.json")
+            project = ioh.read_project_file(
+                f"{UPLOADS}/{filename}/{filename}.project.json")
 
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
             precipitation_file = f"{UPLOADS}/{filename}/{project['precipitation']}"
@@ -355,12 +399,14 @@ def getRoutes(app: Flask):
 
             basin = ioh.read_basin_file(basin_file)
             precipitation, dt_pr = ioh.read_ts_file(precipitation_file)
-            evapotranspiration, dt_et = ioh.read_ts_file(evapotranspiration_file)
-            discharge, _ = ioh.read_ts_file(discharge_file, check_time_diff=False)
+            evapotranspiration, dt_et = ioh.read_ts_file(
+                evapotranspiration_file)
+            discharge, _ = ioh.read_ts_file(
+                discharge_file, check_time_diff=False)
 
             basin['basin_def']['BAHADURABAD']['area'] = area
             basin['basin_def']['BAHADURABAD']['parameters'] = parameter
-            
+
             with open(basin_file, 'w') as basin_file_write_buffer:
                 json.dump(basin, basin_file_write_buffer, indent=2)
 
@@ -375,7 +421,7 @@ def getRoutes(app: Flask):
             # end
             if 'end' not in json.loads(request.data):
                 end = str(precipitation.BAHADURABAD.index[-1]).split(' ')[0]
-            else:   
+            else:
                 end = json.loads(request.data)['end']
 
             head, tail = 0, 0
@@ -394,8 +440,10 @@ def getRoutes(app: Flask):
             # check time difference consistancy
             del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
 
-            computation_result = ch.compute_project(basin, precipitation, evapotranspiration, del_t)
-            statistics = ch.compute_statistics(basin=basin, result=computation_result, discharge=discharge)
+            computation_result = ch.compute_project(
+                basin, precipitation, evapotranspiration, del_t)
+            statistics = ch.compute_statistics(
+                basin=basin, result=computation_result, discharge=discharge)
 
             ioh.write_ts_file(computation_result, result_file)
 
@@ -416,7 +464,8 @@ def getRoutes(app: Flask):
             with open(statistics_file, 'w') as stat_file_write_buffer:
                 json.dump(statistics, stat_file_write_buffer, indent=2)
 
-            res = jsonify({'message': 'ok', 'result': list(computation_result['BAHADURABAD'])})
+            res = jsonify({'message': 'ok', 'result': list(
+                computation_result['BAHADURABAD'])})
             res.status_code = 200
             return res
         except Exception as error:
