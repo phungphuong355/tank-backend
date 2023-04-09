@@ -91,6 +91,35 @@ def getRoutes(app: Flask):
             res.status_code = 400
             return res
 
+    @app.route('/api/v1/users', methods=['GET'])
+    def getAllUser():
+        try:
+            users = list(mongo.db.users.find({}, {'_id': 0, 'password': 0}))
+
+            res = jsonify({'message': 'ok', 'users': users})
+            res.status_code = 200
+            return res
+        except Exception as error:
+            res = jsonify({'message': 'Bad request', 'content': str(error)})
+            res.status_code = 400
+            return res
+
+    @app.route('/api/v1/profile/<string:email>', methods=['GET'])
+    def getProfile(email):
+        try:
+            user = mongo.db.users.find_one(
+                {'email': email}, {'_id': 0, 'password': 0})
+            if not user:
+                raise Exception("user not found")
+
+            res = jsonify({'message': 'ok', 'users': user})
+            res.status_code = 200
+            return res
+        except Exception as error:
+            res = jsonify({'message': 'Bad request', 'content': str(error)})
+            res.status_code = 400
+            return res
+
     @app.route('/api/v1/changePass/<string:email>', methods=['PATCH'])
     def changePassword(email: str):
         try:
