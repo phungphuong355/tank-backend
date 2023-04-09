@@ -1,6 +1,6 @@
 services:
   app:
-    container_name: tls_app
+    container_name: tank_app
     build:
       dockerfile: dockerfile
       context: .
@@ -14,6 +14,10 @@ services:
 
   mongo:
     image: mongo
+    container_name: tank_data
+    restart: always
+    ports:
+      - 27017:27017
     volumes:
       - mongo-data:/data/db
 
