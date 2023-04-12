@@ -8,12 +8,12 @@ import pandas as pd
 from tabulate import tabulate
 
 import project_helper as ph
-from project_config import UPLOADS
+from project_config import UPLOADS, HOST_DB, PORT_DB, NAME_DB
 
 
 def getRouteTank(app: Flask):
     # Database
-    app.config["MONGO_URI"] = "mongodb://mongo:27017/duan"
+    app.config["MONGO_URI"] = f"mongodb://{HOST_DB}:{PORT_DB}/{NAME_DB}"
     mongo = PyMongo(app)
 
     # Upload file excel with only 4 columns

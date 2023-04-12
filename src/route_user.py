@@ -3,10 +3,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_pymongo import PyMongo
 import json
 
+from project_config import HOST_DB, PORT_DB, NAME_DB
+
 
 def getRouteUser(app: Flask):
     # Database
-    app.config["MONGO_URI"] = "mongodb://mongo:27017/duan"
+    app.config["MONGO_URI"] = f"mongodb://{HOST_DB}:{PORT_DB}/{NAME_DB}"
     mongo = PyMongo(app)
 
     # Hello world
