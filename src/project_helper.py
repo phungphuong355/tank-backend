@@ -2,7 +2,7 @@ import json
 import os
 import pandas as pd
 
-from config import UPLOADS, ALLOWED_EXTENSIONS
+from project_config import UPLOADS, ALLOWED_EXTENSIONS
 
 
 # allow file
