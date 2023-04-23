@@ -17,42 +17,28 @@ def getRouteTank(app: Flask):
     mongo = PyMongo(app)
 
     # Upload file excel with only 4 columns
-    @app.route('/api/v1/upload', methods=['POST'])
+    @app.route('/api/v1/data/upload', methods=['POST'])
     def upload():
         try:
             # validate file
             file = request.files['file_excel']
             if 'file_excel' not in request.files:
-                res = jsonify({'message': 'Bad request',
-                              'content': 'No file part'})
-                res.status_code = 400
-                return res
+                raise Exception("No file part")
             elif file.filename == '':
-                res = jsonify({'message': 'Bad request',
-                              'content': 'No selected file'})
-                res.status_code = 400
-                return res
+                raise Exception("No selected file")
             elif not ph.allowed_file(file.filename):
-                res = jsonify({'message': 'Bad request',
-                              'content': 'File is not allowed'})
-                res.status_code = 400
-                return res
+                raise Exception("File is not allowed")
 
-            # verify file input from client
+            # verify file input from client by column
             df = pd.read_excel(file)
             if len(df.columns) > 4:
-                res = jsonify({'message': 'Bad request',
-                              'content': 'File only contain 4 columns'})
-                res.status_code = 400
-                return res
+                raise Exception("File only contain 4 columns")
 
             # check filename in use
             files = mongo.db.file.find_one(
                 {'file': file.filename.split('.')[0].replace(' ', '').lower()})
             if files:
-                res = jsonify({'message': 'file is exist'})
-                res.status_code = 403
-                return res
+                raise Exception("File is exist")
 
             # create system file tank-model follow filename
             ph.create_file_project(file.filename.split('.')[0])
@@ -73,7 +59,7 @@ def getRouteTank(app: Flask):
             res.status_code = 400
             return res
 
-    @app.route('/api/v1/getAll', methods=['GET'])
+    @app.route('/api/v1/data/getAll/categories', methods=['GET'])
     def getALl():
         try:
             filename = list(mongo.db.file.find({}, {'_id': 0}))
@@ -86,14 +72,12 @@ def getRouteTank(app: Flask):
             res.status_code = 400
             return res
 
-    @app.route('/api/v1/getModel/<string:filename>', methods=['GET'])
+    @app.route('/api/v1/data/tank/<string:filename>/getModel', methods=['GET'])
     def getModel(filename):
         try:
             files = mongo.db.file.find_one({'file': filename})
             if not files:
-                res = jsonify({'message': 'file is not exist'})
-                res.status_code = 404
-                return res
+                raise FileNotFoundError("file is not exist")
 
             project = ioh.read_project_file(
                 f"{UPLOADS}/{filename}/{filename}.project.json")
@@ -148,7 +132,7 @@ def getRouteTank(app: Flask):
             res.status_code = 400
             return res
 
-    @app.route('/api/v1/optimize/<string:filename>', methods=['PATCH'])
+    @app.route('/api/v1/data/tank/<string:filename>/optimize', methods=['PATCH'])
     def optimizeModel(filename):
         try:
             files = mongo.db.file.find_one({'file': filename})
@@ -261,7 +245,7 @@ def getRouteTank(app: Flask):
             res.status_code = 400
             return res
 
-    @app.route('/api/v1/compute/<string:filename>', methods=['PATCH'])
+    @app.route('/api/v1/data/tank/<string:filename>/compute', methods=['PATCH'])
     def computeModel(filename):
         try:
             if 'area' not in json.loads(request.data):
