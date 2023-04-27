@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
 from tank_core import io_helpers as ioh
@@ -336,6 +337,66 @@ def getRouteTank(app: Flask):
 
             res = jsonify({'message': 'ok', 'result': list(
                 computation_result['BAHADURABAD'])})
+            res.status_code = 200
+            return res
+        except Exception as error:
+            res = jsonify({'message': 'Bad request', 'content': str(error)})
+            res.status_code = 400
+            return res
+
+    @app.route('/api/v1/data/tank/<string:filename>/predict', methods=['PATCH'])
+    def predictModel(filename):
+        try:
+            if 'time' not in json.loads(request.data):
+                raise Exception("Time is require!")
+
+            if 'precipitation' not in json.loads(request.data):
+                raise Exception("Precipitation is require!")
+
+            if 'evapotranspiration' not in json.loads(request.data):
+                raise Exception("Evapotranspiration is require!")
+
+            time = json.loads(request.data)['time']
+            prec = json.loads(request.data)['precipitation']
+            et = json.loads(request.data)['evapotranspiration']
+
+            project = ioh.read_project_file(
+                f"{UPLOADS}/{filename}/{filename}.project.json")
+
+            basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
+            del_t_proj = project['interval']
+
+            basin = ioh.read_basin_file(basin_file)
+            precipitation, dt_pr = ph.read_ts_file(time, prec)
+            evapotranspiration, dt_et = ph.read_ts_file(time, et)
+
+            # check time difference consistancy
+            del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
+
+            computation_result = ch.compute_project(
+                basin, precipitation, evapotranspiration, del_t)
+
+            computation_result.to_csv(
+                f"{UPLOADS}/{filename}/{filename}.predict.csv", index=True)
+
+            res = jsonify({'message': 'ok'})
+            res.status_code = 200
+            return res
+        except Exception as error:
+            res = jsonify({'message': 'Bad request', 'content': str(error)})
+            res.status_code = 400
+            return res
+
+    @app.route('/api/v1/data/tank/<string:filename>/predict', methods=['GET'])
+    def GetPredict(filename):
+        try:
+            predict_file = f"{UPLOADS}/{filename}/{filename}.predict.csv"
+
+            predict = pd.read_csv(predict_file)
+
+            predict_json = ph.change_data_to_json_file(predict)
+
+            res = jsonify({'message': 'ok', 'predict': predict_json})
             res.status_code = 200
             return res
         except Exception as error:

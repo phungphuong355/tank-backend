@@ -1,6 +1,7 @@
 import json
 import os
 import pandas as pd
+import numpy as np
 
 from project_config import UPLOADS, ALLOWED_EXTENSIONS
 
@@ -174,3 +175,23 @@ def change_data_to_json_file(df: pd.DataFrame) -> dict:
     data = df.to_dict(orient='records')
 
     return data
+
+
+def read_ts_file(Time: list, para: list, check_time_diff: bool = True) -> tuple:
+    Time = pd.to_datetime(Time, utc=True)
+
+    df = pd.DataFrame({
+        'BAHADURABAD': para
+    }, index=Time)
+
+    df.index.name = "Time"
+
+    df = df.sort_index()
+
+    t_diff = np.diff(df.index.to_numpy(), n=1)
+
+    if check_time_diff and not np.all(t_diff == t_diff[0]):
+        raise Exception(
+            'Time difference is not equal, possible missing/irregular dates')
+
+    return (df, t_diff[0]) if check_time_diff else (df, None)
