@@ -27,7 +27,8 @@ def create_file_project(filename: str) -> dict:
         # output file for discharge - csv file
         result=f'{filename}.result.csv',
         # statistics calculated form observed discharge - json-file
-        statistics=f'{filename}.stats.json'
+        statistics=f'{filename}.stats.json',
+        nam=f'{filename}.nam.csv'
     )
 
     project_file_path = os.path.join(
@@ -138,6 +139,7 @@ def create_csv_file(df: pd.DataFrame, filename: str) -> pd.DataFrame:
     et_csv = df.drop(['precipitation', 'discharge'], axis=1)
     q_csv = df.drop(['evapotranspiration', 'precipitation'], axis=1)
     result_csv = df.drop(['evapotranspiration', 'precipitation'], axis=1)
+    nam_csv = df
 
     pr_csv.columns, \
         et_csv.columns, \
@@ -147,6 +149,10 @@ def create_csv_file(df: pd.DataFrame, filename: str) -> pd.DataFrame:
         ["Time", "BAHADURABAD"], \
         ["Time", "BAHADURABAD"]
 
+    nam_csv.columns = ['Date', 'P', 'E', 'Q']
+    nam_csv['Temp'] = [15.4] * len(df.iloc[:, 0])
+    nam_csv['Time'] = pr_csv['Time']
+
     result_csv.BAHADURABAD = [1]*len(result_csv.iloc[:, 0])
 
     pr_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.pr.csv", index=False)
@@ -154,6 +160,7 @@ def create_csv_file(df: pd.DataFrame, filename: str) -> pd.DataFrame:
     q_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.q.csv", index=False)
     result_csv.to_csv(
         f"{UPLOADS}/{filename}/{filename}.result.csv", index=False)
+    nam_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.nam.csv", index=False)
 
     return df
 

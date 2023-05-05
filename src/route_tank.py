@@ -249,6 +249,12 @@ def getRouteTank(app: Flask):
     @app.route('/api/v1/data/tank/<string:filename>/compute', methods=['PATCH'])
     def computeModel(filename):
         try:
+            files = mongo.db.file.find_one({'file': filename})
+            if not files:
+                res = jsonify({'message': 'file is not exist'})
+                res.status_code = 404
+                return res
+
             if 'area' not in json.loads(request.data):
                 raise Exception("area is required")
 
