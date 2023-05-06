@@ -353,6 +353,12 @@ def getRouteTank(app: Flask):
     @app.route('/api/v1/data/tank/<string:filename>/predict', methods=['PATCH'])
     def predictModel(filename):
         try:
+            files = mongo.db.file.find_one({'file': filename})
+            if not files:
+                res = jsonify({'message': 'file is not exist'})
+                res.status_code = 404
+                return res
+
             if 'time' not in json.loads(request.data):
                 raise Exception("Time is require!")
 
@@ -396,6 +402,12 @@ def getRouteTank(app: Flask):
     @app.route('/api/v1/data/tank/<string:filename>/predict', methods=['GET'])
     def GetPredict(filename):
         try:
+            files = mongo.db.file.find_one({'file': filename})
+            if not files:
+                res = jsonify({'message': 'file is not exist'})
+                res.status_code = 404
+                return res
+
             predict_file = f"{UPLOADS}/{filename}/{filename}.predict.csv"
 
             predict = pd.read_csv(predict_file)
