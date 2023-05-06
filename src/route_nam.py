@@ -1,7 +1,7 @@
 import json
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
-from tank_core import io_helpers as ioh
+from tank_model.tank_core import io_helpers as ioh
 
 from project_config import HOST_DB, NAME_DB, PORT_DB, UPLOADS
 

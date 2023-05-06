@@ -40,3 +40,4 @@ flask_pymongo
 seaborn
 flask-cors
 openpyxl
+statsmodels

@@ -1,9 +1,9 @@
 import os
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
-from tank_core import io_helpers as ioh
-from tank_core import utils
-from tank_core import computation_helpers as ch
+from tank_model.tank_core import io_helpers as ioh
+from tank_model.tank_core import utils
+from tank_model.tank_core import computation_helpers as ch
 import json
 import pandas as pd
 from tabulate import tabulate
@@ -93,7 +93,6 @@ def getRouteTank(app: Flask):
             _precipitation = pd.read_csv(precipitation_file)
             _discharge = pd.read_csv(discharge_file)
             _result = pd.read_csv(result_file)
-            timeline = pd.read_csv(precipitation_file)['Time']
 
             # begin
             if 'begin' not in request.args:
@@ -124,7 +123,7 @@ def getRouteTank(app: Flask):
             discharge_td = ph.change_data_to_json_file(_discharge)
             discharge_tt = ph.change_data_to_json_file(_result)
 
-            res = jsonify({'message': 'ok', 'timeline': list(timeline), 'basin': basin, 'stats': stats, 'precipitation': precipitation,
+            res = jsonify({'message': 'ok', 'basin': basin, 'stats': stats, 'precipitation': precipitation,
                            'discharge_td': discharge_td, 'discharge_tt': discharge_tt})
             res.status_code = 200
             return res
@@ -199,7 +198,7 @@ def getRouteTank(app: Flask):
             # check time difference consistancy
             del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
 
-            computation_result = ch.compute_project(
+            computation_result, _ = ch.compute_project(
                 basin, precipitation, evapotranspiration, del_t)
             statistics = ch.compute_statistics(
                 basin=basin, result=computation_result, discharge=discharge)
@@ -213,7 +212,7 @@ def getRouteTank(app: Flask):
                 with open(basin_file, 'w') as wf:
                     json.dump(optimized_basin, wf, indent=2)
 
-                computation_result = ch.compute_project(
+                computation_result, _ = ch.compute_project(
                     basin, precipitation, evapotranspiration, del_t)
                 statistics = ch.compute_statistics(
                     basin=basin, result=computation_result, discharge=discharge)
@@ -317,7 +316,7 @@ def getRouteTank(app: Flask):
             # check time difference consistancy
             del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
 
-            computation_result = ch.compute_project(
+            computation_result, _ = ch.compute_project(
                 basin, precipitation, evapotranspiration, del_t)
             statistics = ch.compute_statistics(
                 basin=basin, result=computation_result, discharge=discharge)
@@ -385,7 +384,7 @@ def getRouteTank(app: Flask):
             # check time difference consistancy
             del_t = utils.check_time_delta(dt_pr, dt_et, del_t_proj)
 
-            computation_result = ch.compute_project(
+            computation_result, _ = ch.compute_project(
                 basin, precipitation, evapotranspiration, del_t)
 
             computation_result.to_csv(
