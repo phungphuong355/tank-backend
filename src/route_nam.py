@@ -27,7 +27,7 @@ def getRouteNam(app: Flask):
             basin_file = f"{UPLOADS}/{filename}/{project['basin']}"
             stats_file = f"{UPLOADS}/{filename}/{project['statistics']}"
             discharge_file = f"{UPLOADS}/{filename}/{project['discharge']}"
-            result_file = f"{UPLOADS}/{filename}/{project['result']}"
+            result_file = f"{UPLOADS}/{filename}/{filename}.nam.csv"
             precipitation_file = f"{UPLOADS}/{filename}/{project['precipitation']}"
 
             basin = ioh.read_basin_file(basin_file)
@@ -35,8 +35,6 @@ def getRouteNam(app: Flask):
             _precipitation = pd.read_csv(precipitation_file)
             _discharge = pd.read_csv(discharge_file)
             _result = pd.read_csv(result_file)
-
-            _result = _result.drop(['Temp', 'Q', 'P', 'E', 'Lsoil'], axis=1)
 
             # begin
             if 'begin' not in request.args:

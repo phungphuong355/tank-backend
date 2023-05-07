@@ -67,7 +67,7 @@ class Nam(object):
         self.PBIAS = None
         self.Cal = Cal
         self.statistics = None
-        self.export = f'{Filename}.result.csv'
+        self.export = f'{Filename}.nam.csv'
         self.Sm = None
         self.Ssnow = None
         self.Qsnow = None
