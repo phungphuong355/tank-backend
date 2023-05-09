@@ -4,6 +4,7 @@ from flask_cors import CORS
 from route_user import getRouteUser
 from route_tank import getRouteTank
 from route_nam import getRouteNam
+from project_config import PORT
 
 # Flask Server Backend
 app = Flask(__name__)
@@ -18,4 +19,4 @@ getRouteNam(app)
 
 # Start Backend
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port='6000')
+    app.run(debug=True, host='0.0.0.0', port=PORT)

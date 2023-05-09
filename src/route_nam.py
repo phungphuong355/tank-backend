@@ -36,6 +36,9 @@ def getRouteNam(app: Flask):
             _discharge = pd.read_csv(discharge_file)
             _result = pd.read_csv(result_file)
 
+            _result = _result.drop(['Temp', 'P', 'E', 'Q', 'Lsoil'], axis=1)
+            _result.columns = ['Time', 'BAHADURABAD']
+
             # begin
             if 'begin' not in request.args:
                 begin = str(_precipitation.Time[0]).split(' ')[0]

@@ -65,7 +65,20 @@ def create_basin_file(filename: str) -> dict:
                     "t3_is": 0.01,
                     "t3_soc": 0.01
                 },
-                "area": 0.0
+                "area": 0.0,
+                "nam": {
+                    "umax": 10,
+                    "lmax": 100,
+                    "cqof": 0.1,
+                    "ckif": 200,
+                    "ck12": 10,
+                    "tof": 0,
+                    "tif": 0,
+                    "tg": 0,
+                    "ckbf": 1000,
+                    "csnow": 0,
+                    "snowtemp": 0
+                }
             },
             "Reach": {
                 "type": "Reach",
@@ -115,6 +128,10 @@ def create_stats_file(filename: str) -> dict:
             "NSE": 0.0,
             "R2": 0.0,
             "PBIAS": 0.0
+        },
+        NAM={
+            "NSE": 0.0,
+            "RMSE": 0.0
         }
     )
 
@@ -138,22 +155,25 @@ def create_csv_file(df: pd.DataFrame, filename: str) -> pd.DataFrame:
     et_csv = df.drop(['precipitation', 'discharge'], axis=1)
     q_csv = df.drop(['evapotranspiration', 'precipitation'], axis=1)
     result_csv = df.drop(['evapotranspiration', 'precipitation'], axis=1)
+    nam_csv = df
 
-    pr_csv.columns, \
-        et_csv.columns, \
-        q_csv.columns, \
-        result_csv.columns = ["Time", "BAHADURABAD"], \
-        ["Time", "BAHADURABAD"], \
-        ["Time", "BAHADURABAD"], \
-        ["Time", "BAHADURABAD"]
+    pr_csv.columns = ["Time", "BAHADURABAD"]
+    et_csv.columns = ["Time", "BAHADURABAD"]
+    q_csv.columns = ["Time", "BAHADURABAD"]
+    result_csv.columns = ["Time", "BAHADURABAD"]
+    nam_csv.columns = ['Date', 'P', 'E', 'Q']
 
     result_csv.BAHADURABAD = [1]*len(result_csv.iloc[:, 0])
+    nam_csv['Qsim'] = [1]*len(nam_csv.iloc[:, 0])
+    nam_csv['Lsoil'] = [1]*len(nam_csv.iloc[:, 0])
+    nam_csv.insert(1, 'Temp', [0]*len(nam_csv.iloc[:, 0]))
 
     pr_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.pr.csv", index=False)
     et_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.et.csv", index=False)
     q_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.q.csv", index=False)
     result_csv.to_csv(
         f"{UPLOADS}/{filename}/{filename}.result.csv", index=False)
+    nam_csv.to_csv(f"{UPLOADS}/{filename}/{filename}.nam.csv", index=False)
 
     return df
 
