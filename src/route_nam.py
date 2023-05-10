@@ -340,9 +340,9 @@ def getRouteNam(app: Flask):
             nam_model.df = df_nam
             nam_model.run()
 
-            df_nam['Qsim'] = nam_model.Qsim
+            df_nam['BAHADURABAD'] = nam_model.Qsim
             df_nam['Time'] = df_nam.index
-            df_nam = df_nam.drop(['Temp', 'Q'], axis=1)
+            df_nam = df_nam.drop(['Temp', 'Q', 'E', 'P'], axis=1)
             result = df_nam.to_dict(orient='records')
 
             res = jsonify({'message': 'ok', 'result': result})
