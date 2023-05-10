@@ -5,6 +5,7 @@ from tank_model.tank_core import io_helpers as ioh
 from tank_model.tank_core import utils
 from tank_model.tank_core import computation_helpers as ch
 import json
+import shutil
 import pandas as pd
 from tabulate import tabulate
 
@@ -64,6 +65,24 @@ def getRouteTank(app: Flask):
     def getALl():
         try:
             filename = list(mongo.db.file.find({}, {'_id': 0}))
+
+            res = jsonify({'message': 'ok', 'filename': filename})
+            res.status_code = 200
+            return res
+        except Exception as error:
+            res = jsonify({'message': 'Bad request', 'content': str(error)})
+            res.status_code = 400
+            return res
+
+    @app.route('/api/v1/data/<string:filename>/delete', methods=['DELETE'])
+    def deleteModel(filename: str):
+        try:
+            files = mongo.db.file.find_one({'file': filename})
+            if not files:
+                raise FileNotFoundError("file is not exist")
+
+            mongo.db.file.find_one_and_delete({'file': filename})
+            shutil.rmtree(f'{UPLOADS}/{filename}')
 
             res = jsonify({'message': 'ok', 'filename': filename})
             res.status_code = 200
