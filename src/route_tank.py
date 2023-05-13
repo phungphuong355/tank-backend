@@ -181,6 +181,7 @@ def getRouteTank(app: Flask):
                 evapotranspiration_file)
             discharge, _ = ioh.read_ts_file(
                 discharge_file, check_time_diff=False)
+            statistics_pro = ph.read_stats_file(statistics_file)
 
             basin['basin_def']['BAHADURABAD']['area'] = area
 
@@ -252,8 +253,10 @@ def getRouteTank(app: Flask):
                 )
             )
 
+            statistics_pro['BAHADURABAD'] = statistics['BAHADURABAD']
+
             with open(statistics_file, 'w') as stat_file_write_buffer:
-                json.dump(statistics, stat_file_write_buffer, indent=2)
+                json.dump(statistics_pro, stat_file_write_buffer, indent=2)
 
             res = jsonify({'message': 'ok', 'result': list(
                 computation_result['BAHADURABAD'])})
@@ -298,6 +301,7 @@ def getRouteTank(app: Flask):
                 evapotranspiration_file)
             discharge, _ = ioh.read_ts_file(
                 discharge_file, check_time_diff=False)
+            statistics_pro = ph.read_stats_file(statistics_file)
 
             basin['basin_def']['BAHADURABAD']['area'] = area
             basin['basin_def']['BAHADURABAD']['parameters'] = parameter
@@ -356,8 +360,10 @@ def getRouteTank(app: Flask):
                 )
             )
 
+            statistics_pro['BAHADURABAD'] = statistics['BAHADURABAD']
+
             with open(statistics_file, 'w') as stat_file_write_buffer:
-                json.dump(statistics, stat_file_write_buffer, indent=2)
+                json.dump(statistics_pro, stat_file_write_buffer, indent=2)
 
             res = jsonify({'message': 'ok', 'result': list(
                 computation_result['BAHADURABAD'])})
@@ -368,7 +374,7 @@ def getRouteTank(app: Flask):
             res.status_code = 400
             return res
 
-    @app.route('/api/v1/data/tank/<string:filename>/predict', methods=['PATCH'])
+    @app.route('/api/v1/data/tank/<string:filename>/predict', methods=['POST'])
     def predictModel(filename):
         try:
             files = mongo.db.file.find_one({'file': filename})
@@ -406,33 +412,11 @@ def getRouteTank(app: Flask):
             computation_result, _ = ch.compute_project(
                 basin, precipitation, evapotranspiration, del_t)
 
-            computation_result.to_csv(
-                f"{UPLOADS}/{filename}/{filename}.predict.csv", index=True)
+            computation_result['Time'] = pd.to_datetime(computation_result.index, utc=True)
 
-            res = jsonify({'message': 'ok'})
-            res.status_code = 200
-            return res
-        except Exception as error:
-            res = jsonify({'message': 'Bad request', 'content': str(error)})
-            res.status_code = 400
-            return res
+            result = computation_result.to_dict(orient='records')
 
-    @app.route('/api/v1/data/tank/<string:filename>/predict', methods=['GET'])
-    def GetPredict(filename):
-        try:
-            files = mongo.db.file.find_one({'file': filename})
-            if not files:
-                res = jsonify({'message': 'file is not exist'})
-                res.status_code = 404
-                return res
-
-            predict_file = f"{UPLOADS}/{filename}/{filename}.predict.csv"
-
-            predict = pd.read_csv(predict_file)
-
-            predict_json = ph.change_data_to_json_file(predict)
-
-            res = jsonify({'message': 'ok', 'predict': predict_json})
+            res = jsonify({'message': 'ok', 'result': result})
             res.status_code = 200
             return res
         except Exception as error:

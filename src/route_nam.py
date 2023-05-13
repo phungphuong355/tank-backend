@@ -123,7 +123,7 @@ def getRouteNam(app: Flask):
             df_nam.columns = ['Date', 'Q']
             df_nam['P'] = precipitation['BAHADURABAD']
             df_nam['E'] = evapotranspiration['BAHADURABAD']
-            df_nam.insert(1, 'Temp', [0]*len(df_nam['Date']))
+            df_nam.insert(1, 'Temp', [25]*len(df_nam['Date']))
             df_nam = df_nam.set_index('Date')
 
             # begin
@@ -151,7 +151,7 @@ def getRouteNam(app: Flask):
 
                 df_nam = df_nam.iloc[head:tail+1]
 
-            # Initilize object
+            # Initialize object
             nam = Nam(Filename=filename, Area=area, Cal=cal, DeltaT=del_t_proj)
             # Process path
             nam.process_path = rf'{UPLOADS}/{filename}'
@@ -222,7 +222,7 @@ def getRouteNam(app: Flask):
             df_nam.columns = ['Date', 'Q']
             df_nam['P'] = precipitation['BAHADURABAD']
             df_nam['E'] = evapotranspiration['BAHADURABAD']
-            df_nam.insert(1, 'Temp', [0]*len(df_nam['Date']))
+            df_nam.insert(1, 'Temp', [25.0]*len(df_nam['Date']))
             df_nam = df_nam.set_index('Date')
 
             # begin
@@ -250,12 +250,17 @@ def getRouteNam(app: Flask):
 
                 df_nam = df_nam.iloc[head:tail+1]
 
-            # Initilize object
+            # Initialize object
             nam = Nam(Filename=filename, Area=area, Cal=cal, DeltaT=del_t_proj)
             # Process path
             nam.process_path = rf'{UPLOADS}/{filename}'
             # Dataset
             nam.df = df_nam
+            # Parameters
+            parameter = basin['basin_def']['BAHADURABAD']['nam']
+            nam.initial = np.array([parameter['umax'], parameter['lmax'], parameter['cqof'], parameter['ckif'],
+                                    parameter['ck12'], parameter['tof'], parameter['tif'], parameter['tg'],
+                                    parameter['ckbf'], parameter['csnow'], parameter['snowtemp']])
             # Run NAM
             nam.run()
             nam.stats()
